@@ -146,7 +146,3 @@ echo '{"model":{"display_name":"Opus 5.5"},"effort":{"level":"medium"},"workspac
   behave. The status line script doesn't depend on it.
 - The subagent row layout (spacing, time and token formats) was matched by testing against Claude
   Code 2.1.332. If a later release changes it, adjust the constants in `register.ts`.
-
-## License
-
-[MIT](LICENSE) © 2026 Atharv Pandit
