@@ -17,6 +17,9 @@ color_pct() {
   printf '%s%d%%%s' "$c" "$p" "$RESET"
 }
 
+# Format epoch seconds: BSD date (macOS) takes -r, GNU date (Linux, Git Bash) takes -d @.
+fmt_epoch() { date -r "$1" "$2" 2>/dev/null || date -d "@$1" "$2"; }
+
 IFS=$'\x1f' read -r model effort dir h5_used h5_reset d7_used d7_reset ctx_left < <(
   jq -r '[
     .model.display_name // "",
@@ -34,8 +37,18 @@ IFS=$'\x1f' read -r model effort dir h5_used h5_reset d7_used d7_reset ctx_left 
 out="$model"
 [[ -n $effort ]] && out+=" $effort"
 
-# Directory with ~ for $HOME
-[[ $dir == "$HOME"* ]] && dir="~${dir#"$HOME"}"
+# Directory with ~ for the home folder. On Windows (Git Bash) the path arrives
+# as C:\Users\me\..., so compare it with slashes against the Windows form of $HOME.
+dir=${dir//\\//}
+home=$HOME
+command -v cygpath >/dev/null 2>&1 && home=$(cygpath -m "$HOME")
+if [[ $dir == "$HOME" || $dir == "$HOME"/* ]]; then
+  dir="~${dir:${#HOME}}"
+else
+  shopt -s nocasematch   # Windows paths ignore case (c:/users vs C:/Users)
+  [[ $dir == "$home" || $dir == "$home"/* ]] && dir="~${dir:${#home}}"
+  shopt -u nocasematch
+fi
 out+="${SEP}${dir}"
 
 # 5-hour window: remaining % and time until reset
@@ -50,7 +63,7 @@ fi
 # 7-day window: remaining % and local reset day/time
 if [[ -n $d7_used && -n $d7_reset ]]; then
   left=$(( 100 - $(printf '%.0f' "$d7_used") ))
-  out+="${SEP}7d: $(color_pct "$left") ($(date -r "${d7_reset%.*}" '+%a %H:%M'))"
+  out+="${SEP}7d: $(color_pct "$left") ($(fmt_epoch "${d7_reset%.*}" '+%a %H:%M'))"
 else
   out+="${SEP}7d: --"
 fi
