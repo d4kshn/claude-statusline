@@ -1,0 +1,1 @@
+{ "name": "subagent-ctx", "version": "0.1.0", "description": "Append each subagent's own context remaining to its built-in agent row" }
